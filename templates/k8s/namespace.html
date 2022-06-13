@@ -1,0 +1,157 @@
+{% extends 'base.html' %}
+{% block nav-1 %}layui-nav-itemed{% endblock %}
+{% block nav-child-1-2 %}layui-this{% endblock %}
+{% block content %}
+    <span class="layui-breadcrumb">
+        <a href="/">首页</a>
+        <a href="#">Kubernets</a>
+        <a><cite>Namespace</cite></a>
+    </span>
+    <br>
+    <br>
+    {% csrf_token %}
+    <div id="create" style="display: none">
+        <form class="layui-form" action="">
+          <div class="layui-form-item" style="margin-top: 10px">
+              <label class="layui-form-label">请输入名称</label>
+              <div class="layui-input-block">
+                  <input type="text" name="name" required  lay-verify="required" placeholder="请输入命名空间名称" autocomplete="off" class="layui-input" style="width: 200px">
+              </div>
+          </div>
+            <div class="layui-form-item">
+                <div class="layui-input-block">
+                    <button class="layui-btn" lay-submit lay-filter="createSubmit">立即提交</button>
+                </div>
+            </div>
+        </form>
+    </div>
+    <div class="layui-card" style="margin-bottom: 20px">
+        <div class="layui-card-body">
+            <button class="layui-btn" style="float: left;margin-right: 15px" id="createBtn">创建</button>
+            <input type="text" class="layui-input" style="float: left; width: 150px" name="searchKey">
+            <button class="layui-btn" id="searchBtn">搜索</button>
+
+            <table id="demo" lay-filter="test"></table>
+            <script type="text/html" id="barDemo">
+                <a class="layui-btn layui-btn-xs" lay-event="edit">YAML</a>
+                <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="del">删除</a>
+            </script>
+        </div>
+    </div>
+{% endblock %}
+
+{% block js %}
+    <script>
+        layui.use(['table', 'form'], function () {
+            var table = layui.table;
+            var $ = layui.$;
+            var form = layui.form;
+            table.render({
+                elem: '#demo'
+                ,height: 312
+                ,url: '{% url 'namespace_api' %}' //数据接口
+                ,page: true //开启分页
+                ,id: 'TT'
+                ,defaultToolbar: ['filter', 'print', 'exports', {
+                    title: '提示' //标题
+                    ,layEvent: 'LAYTABLE_TIPS' //事件名，用于 toolbar 事件中使用
+                    ,icon: 'layui-icon-tips' //图标类名
+                    }]
+                ,cols: [[ //表头
+                  {field: 'name', title: '名称', sort: true}
+                  ,{field: 'labels', title: '标签', templet: labelsFormat}
+                  ,{field: 'create_time', title: '创建时间'}
+                  ,{field: 'right', title: '操作', toolbar: '#barDemo', width: 150}
+                ]]
+              });
+            function labelsFormat(row) {
+            result = "";
+            for(key in row.labels){
+                result += '<span style="background: #F5F7FA;border-radius: 4px;padding: 3px">' + key + ':' + row.labels[key] +'</span><br>'
+            }
+            return result
+        }
+            // 监听行工具栏事件
+            table.on('tool(test)',function (obj) {
+            var data = obj.data;
+            var $ = layui.$;
+            var csrf_token = $('[name="csrfmiddlewaretoken"]').val();
+            if (obj.event === 'del') {
+                layer.confirm('真的要删除吗?', function (index) {
+                    $.ajax({
+                        type: 'DELETE',
+                        url: '{% url 'namespace_api' %}',
+                        data: data,
+                        headers: {'X-CSRFToken': csrf_token},
+                        success: function (result) {
+                            if(result.code == 0){
+                                obj.del()
+                                layer.msg(result.msg, {icon: 6})
+                            }else {
+                                layer.msg(result.msg, {icon: 5})
+                            }
+                        },
+                        error: function () {
+                            layer.open({
+                                type: 0,
+                                title: "异常信息",
+                                content: "服务器接口异常 "
+                            })
+                        }
+                    });
+                    layer.close(index);
+                })
+            } else if (obj.event === 'yaml') {
+
+                }
+            });
+            // 监听搜索事件
+            $(document).on('click', '#searchBtn', function () {
+                var input_val = $('[name="searchKey"]').val();
+                table.reload('TT', {
+                    where: {
+                        search_key: input_val
+                    }
+                })
+            })
+            // 监听创建
+            $('#createBtn').on('click', function () {
+                layer.open({
+                    type: 1,
+                    title: '创建',
+                    area: ['25%', '30%'],
+                    content: $('#create').html(),
+
+                });
+                form.on('submit(createSubmit)', function (data) {
+                    data = data.field;
+                    var csrf_token = $('[name="csrfmiddlewaretoken"]').val();
+                    data['csrfmiddlewaretoken'] = csrf_token;
+                    $.ajax({
+                        type: 'POST',
+                        url: '{% url 'namespace_api' %}',
+                        data: data,
+                        dataType: "json",
+                        success: function (result) {
+                            if(result.code == 0){
+                                layer.msg(result.msg, {icon: 6})
+                            }else {
+                                layer.msg(result.msg, {icon: 5})
+                                layer.open({
+                                    type: 0,
+                                    title: "异常信息",
+                                    content: result.msg,
+                                })
+                            }
+                        },
+                    })
+                })
+            })
+
+        });
+
+
+    </script>
+{% endblock %}
+
+</span>

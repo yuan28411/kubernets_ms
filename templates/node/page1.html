@@ -1,0 +1,118 @@
+{% extends 'base.html' %}
+{% block content %}
+
+    <div class="layui-card">
+        <div class="layui-card-header">用户信息</div>
+        <div class="layui-card-body" >
+            <button id="msgeject" type="button" class="layui-btn">弹窗</button>
+            <table id="demo" lay-filter="test" width="0px" height="0px"></table>
+            <script type="text/html" id="toolbarDemo">
+                <input style="width: 150px;float: left;margin-right: 2px" type="text" name="username" required lay-verify="required" placeholder="请输入用户名" autocomplete="off" class="layui-input">
+                <button id="searchBtn" type="button" class="layui-btn">搜索</button>
+        </script>
+            <script type="text/html" id="barDemo">
+                <a class="layui-btn layui-btn-primary layui-btn-xs" lay-event="detail">查看</a>
+                <a class="layui-btn layui-btn-xs" lay-event="edit">编辑</a>
+                <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="del">删除</a>
+            </script>
+        </div>
+    </div>
+
+{% endblock %}
+{% block js %}
+<script>
+
+layui.use(['table', 'layer'],function(){
+  var table = layui.table;
+  var $ = layui.$;
+  var layer = layui.layer;
+  //第一个实例
+  table.render({
+    elem: '#demo'
+    ,height: 425
+    ,toolbar: '#toolbarDemo'
+    ,url: '/myapp/ajax_api' //数据接口
+    ,page: true //开启分页
+    ,cols: [[ //表头
+      {field: 'id', title: 'ID', sort: true, fixed: 'left'}
+      ,{field: 'username', title: '用户名'}
+      ,{field: 'sex', title: '性别', templet: sexFormat}
+      ,{field: 'email', title: '邮箱'}
+      ,{field: 'city', title: '城市'}
+      ,{fixed: 'right', title:'操作', toolbar: '#barDemo', width:200}
+    ]]
+    ,id: 'TT'
+  });
+    function sexFormat(row) {
+                  if (row.sex == '男') {
+                      return '<span style="color: blue">' + row.sex + '</span>'
+                  }else {
+                      return '<span style="color: pink">' + row.sex + '</span>'
+                  }
+              }
+    table.on('tool(test)', function(obj){
+    var data = obj.data;
+    //console.log(obj)
+    if(obj.event === 'del'){
+      layer.confirm('真的删除行么', function(index){
+        obj.del();
+        layer.close(index);
+      });
+    } else if(obj.event === 'edit'){
+      layer.prompt({
+        formType: 2
+        ,value: data.email
+        ,value: data.username
+        ,value: data.sex
+      }, function(value, index){
+        obj.update({
+          email: value
+        });
+        layer.close(index);
+      });
+    } else if(obj.event === 'detail') {
+        console.log(data.sex);
+    }
+  });
+     table.on('toolbar(test)', function(obj){
+    var checkStatus = table.checkStatus(obj.config.id);
+    switch(obj.event){
+      case 'getCheckData':
+        var data = checkStatus.data;
+        layer.alert(JSON.stringify(data));
+      break;
+      case 'getCheckLength':
+        var data = checkStatus.data;
+        layer.msg('选中了：'+ data.length + ' 个');
+      break;
+      case 'isAll':
+        layer.msg(checkStatus.isAll ? '全选': '未全选');
+      break;
+
+      //自定义头工具栏右侧图标 - 提示
+      case 'LAYTABLE_TIPS':
+        layer.alert('这是工具栏右侧自定义的一个图标按钮');
+      break;
+    }
+  });
+
+     $(document).on('click', '#searchBtn', function () {
+         var input_val = $("input[name='username']").val();
+         console.log(input_val);
+         table.reload('TT', {
+             url: '/myapp/ajax_api'
+             ,where: {
+                 searchKey: input_val,
+             } //设定异步数据接口的额外参数
+             // ,height: 300
+         });
+     });
+     $('#msgeject').click(function () {
+         layer.open({
+             type: 2,
+             content: 'http://www.aliangedu.cn'
+         });
+     });
+});
+</script>
+{% endblock %}

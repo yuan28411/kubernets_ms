@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <title>K8s管理系统</title>
+    <link rel="stylesheet" href="/static/layui/css/layui.css">
+    <style>
+        .namespace {
+            margin-top: 10px;
+            padding-left: 0px;
+        }
+        .namespace select {
+            width: 150px;
+            height: 40px;
+            text-align: center;
+            font-size: 20px;
+        }
+        .namespace option {
+
+            position: absolute;
+        }
+        .layui-table-cell {
+            height: 100%;
+        }
+    </style>
+</head>
+<body>
+<div id="div1" style="background: orange;width: 200px;height: 200px;display: none"></div>
+<div class="layui-layout layui-layout-admin">
+  <div class="layui-header layui-bg-cyan">
+    <div class="layui-logo layui-hide-xs layui-bg-cyan">K8s管理系统</div>
+    <!-- 头部区域（可配合layui 已有的水平导航） -->
+    <ul class="layui-nav layui-layout-left" style="border-left-width: 0px">
+      <!-- 移动端显示 -->
+        <div class="namespace">
+            <select name="namespace">
+{#                <option value="default">defautl</option>#}
+{#                <option value="kube-system">kube-system</option>#}
+            </select>
+        </div>
+    </ul>
+
+
+    <ul class="layui-nav layui-layout-right">
+      <li class="layui-nav-item layui-hide layui-show-md-inline-block" style="margin-bottom: 20px">
+        <a href="javascript:;">
+          <img src="/static/img/tx.jpeg" class="layui-nav-img">
+          admin
+        </a>
+      </li>
+      <li class="layui-nav-item layui-hide layui-show-md-inline-block" style="margin-bottom: 20px">
+        <a href="/logout">退出</a>
+      </li>
+    </ul>
+  </div>
+
+  <div class="layui-side layui-bg-black">
+    <div class="layui-side-scroll layui-bg-cyan">
+      <!-- 左侧导航区域（可配合layui已有的垂直导航） -->
+      <ul class="layui-nav layui-nav-tree layui-bg-cyan" lay-filter="test">
+       <li class="layui-nav-item"><a href="javascript:;"><i class="layui-icon">&#xe665;</i>&nbsp;&nbsp;仪表盘</a></li>
+        <li class="layui-nav-item {% block nav-1 %}{% endblock %}">
+          <a class="" href="javascript:;"><i class="layui-icon">&#xe665;</i>&nbsp;&nbsp;Kubernets</a>
+          <dl class="layui-nav-child">
+            <dd><a href="{% url 'node' %}" class="{% block nav-child-1-1 %}{% endblock %}">Node</a></dd>
+            <dd><a href="{% url 'namespace' %}" class="{% block nav-child-1-2 %}{% endblock %}">NameSPace</a></dd>
+            <dd><a href="javascript:;" class="{% block nav-child-3 %}{% endblock %}">PV</a></dd>
+          </dl>
+        </li>
+        <li class="layui-nav-item {% block nav-2 %}{% endblock %}">
+          <a href="javascript:;"><i class="layui-icon">&#xe653;</i>&nbsp;&nbsp;负载</a>
+          <dl class="layui-nav-child">
+            <dd><a href="{% url 'deployment' %}" class="{% block nav-child-2-1 %}{% endblock %}">Deployment</a></dd>
+            <dd><a href="javascript:;" class="{% block nav-child-2-2 %}{% endblock %}">StatfulSet</a></dd>
+          </dl>
+        </li>
+
+      </ul>
+    </div>
+  </div>
+
+  <div class="layui-body" style="background: #eeeeee">
+    <!-- 内容主体区域 -->
+    <div style="padding: 15px;">
+        {% block content %} {% endblock %}
+    </div>
+  </div>
+
+  <div class="layui-footer" style="text-align: center">
+    <!-- 底部固定区域 -->
+    四川鱼鳞图  www.dyblog.top
+  </div>
+</div>
+
+<script src="/static/layui/layui.js"></script>
+{% block js %}{% endblock %}
+<script>
+//JS
+layui.use(['layer'], function(){
+    var $ = layui.$;
+    var layer = layui.layer;
+    $.ajax({
+        type: "GET",
+        url: "{% url 'namespace_api' %}",
+        success: function (result) {
+            for(i in result.data){
+                row = result.data[i];
+                $('.namespace select').append('<option value=' + row.name + '>' + row.name + '</option>');
+            }
+        },
+        error: function () {
+            layer.open({
+                type: 0,
+                title: "异常信息",
+                content: "获取命名空间列表失败 "
+            })
+        }
+    })
+    // 存储当前选择的命名空间，以便共享别的
+    var storage = window.sessionStorage;
+
+
+    namespace = storage.getItem('namespace');
+    if(namespace == null){
+        storage.setItem('namespace', 'default');
+    }else{
+        $('.namespace select').val(namespace);
+        console.log($('.namespace select').val(namespace));
+    }
+    // 选择命名空间触发
+    $('.namespace select').change(function () {
+        var current_ns = $('.namespace select').val();
+        storage.setItem('namespace', current_ns);
+    });
+
+});
+</script>
+</body>
+</html>
